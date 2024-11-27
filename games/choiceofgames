@@ -1,0 +1,224 @@
+#!/bin/bash
+
+maze=(
+  "###############"
+  "#S..........#.#"
+  "#.#####.#####.#"
+  "#...........#.#"
+  "#####.#####.#.#"
+  "#...K.......#.#"
+  "###.#########.#"
+  "#.............#"
+  "#.###########.#"
+  "#.#.......#...#"
+  "#.#.#####.#.###"
+  "#.#.#.....#...#"
+  "#.#.#####.#####"
+  "#.............E"
+  "###############"
+)
+
+# 플레이어 시작 위치
+player_row=1
+player_col=1
+
+# 출구 위치
+exit_row=13
+exit_col=13
+
+# 열쇠 위치
+key_row=5
+key_col=4
+
+# 열쇠 상태
+has_key=0
+
+# 게임 완료 상태
+game1_complete=0
+game2_complete=0
+
+# 미로 출력 함수
+display_maze() {
+  clear
+  echo "==================== 미로 탐험 ===================="
+  echo "기호 안내:"
+  echo "S: 시작점, E: 출구, K: 열쇠, .: 빈 공간, #: 벽"
+  echo "열쇠를 획득해야 출구로 나갈 수 있습니다!"
+  echo "=================================================="
+  echo
+  for ((i = 0; i < ${#maze[@]}; i++)); do
+    row="${maze[$i]}"
+    for ((j = 0; j < ${#row}; j++)); do
+      if [[ $i -eq $player_row && $j -eq $player_col ]]; then
+        echo -n "P"  # 플레이어 위치 표시
+      else
+        echo -n "${row:$j:1}"
+      fi
+    done
+    echo
+  done
+}
+
+# 플레이어 이동 함수
+move_player() {
+  new_row=$player_row
+  new_col=$player_col
+
+  case $1 in
+    w) ((new_row--)) ;;  # 위로 이동
+    s) ((new_row++)) ;;  # 아래로 이동
+    a) ((new_col--)) ;;  # 왼쪽으로 이동
+    d) ((new_col++)) ;;  # 오른쪽으로 이동
+    *) echo "잘못된 입력입니다!" && return ;;
+  esac
+
+  # 이동 가능 여부 확인
+  local target=${maze[$new_row]:$new_col:1}
+  if [[ $target == "#" ]]; then
+    echo "벽에 막혀 이동할 수 없습니다!"
+    return
+  fi
+
+  # 열쇠 획득
+  if [[ $target == "K" ]]; then
+    has_key=1
+    echo "열쇠를 획득했습니다!"
+  fi
+
+  # 출구 도달 확인
+  if [[ $new_row -eq $exit_row && $new_col -eq $exit_col ]]; then
+    if [[ $has_key -eq 1 ]]; then
+      echo "축하합니다! 미로를 탈출했습니다!"
+      game1_complete=1
+      return
+    else
+      echo "출구를 열려면 열쇠가 필요합니다!"
+      return
+    fi
+  fi
+
+  # 위치 업데이트
+  player_row=$new_row
+  player_col=$new_col
+}
+
+# 바둑판 출력 함수
+display_board() {
+  clear
+  echo "=== 바둑 묘수풀이 ==="
+  echo "○: 백돌, ●: 흑돌, .: 빈칸"
+  echo "8x8 바둑판입니다. 흑이 정확한 위치에 돌을 두어 백을 잡으세요."
+  echo "   0 1 2 3 4 5 6 7"
+  for ((i=0; i < board_size; i++)); do
+    printf "%d " $i
+    for ((j=0; j < board_size; j++)); do
+      index=$((i * board_size + j))
+      echo -n " ${board[$index]}"
+    done
+    echo
+  done
+}
+
+# 돌 놓기 함수
+place_stone() {
+  local row=$1
+  local col=$2
+  local index=$((row * board_size + col))
+
+  if [[ ${board[$index]} != "." ]]; then
+    echo "이미 돌이 있는 자리입니다. 다른 위치를 선택하세요!"
+    return 1
+  fi
+
+  board[$index]="●"  # 흑돌을 놓습니다.
+
+  # 정답 확인
+  if [[ $row -eq $correct_row && $col -eq $correct_col ]]; then
+    display_board
+    echo "축하합니다! 정답입니다! 백돌을 모두 잡았습니다."
+    game2_complete=1
+    return
+  else
+    echo "틀렸습니다! 다시 시도하세요!"
+    return 1
+  fi
+}
+
+# 바둑판 설정
+board_size=8
+board=()
+for ((i=0; i < board_size; i++)); do
+  row=()
+  for ((j=0; j < board_size; j++)); do
+    if [[ ($i -eq 2 && $j -ge 5 && $j -le 7) || \
+          ($i -eq 3 && $j -eq 5) || \
+          ($i -eq 4 && $j -eq 5) || \
+          ($i -eq 5 && $j -ge 2 && $j -le 5) || \
+          ($i -eq 6 && $j -eq 2) || \
+          ($i -eq 7 && ($j -eq 2 || $j -eq 7)) ]]; then
+      row+=("●")
+    elif [[ ($i -eq 3 && $j -ge 6 && $j -le 7) || \
+            ($i -eq 4 && $j -eq 6) || \
+            ($i -eq 5 && ($j -ge 6 && $j -le 7)) || \
+            ($i -eq 6 && ($j -ge 3 && $j -le 5)) || \
+            ($i -eq 7 && ($j -eq 3 || $j -eq 5)) ]]; then
+      row+=("○")
+    else
+      row+=(".")
+    fi
+  done
+  board+=("${row[@]}")
+done
+
+# 정답 위치
+correct_row=6
+correct_col=6
+
+# 메인 게임 루프
+while true; do
+  if [[ $game1_complete -eq 1 && $game2_complete -eq 1 ]]; then
+    echo "축하합니다! 두 게임을 모두 완료했습니다. 이제 방을 나갈 수 있습니다."
+    exit 0
+  fi
+
+  echo "==== 게임 카테고리 ===="
+  echo "1. 미로 탐험"
+  echo "2. 바둑 묘수풀이"
+  echo -n "게임을 선택하세요 (1, 2): "
+  read choice
+
+  case $choice in
+    1)
+      if [[ $game1_complete -eq 1 ]]; then
+        echo "이미 이 게임을 완료했습니다. 다른 게임을 선택하세요."
+      else
+        while [[ $game1_complete -eq 0 ]]; do
+          display_maze
+          echo "움직이세요: w(위), a(왼쪽), s(아래), d(오른쪽)"
+          read -n 1 move
+          move_player $move
+        done
+      fi
+      ;;
+    2)
+      if [[ $game2_complete -eq 1 ]]; then
+        echo "이미 이 게임을 완료했습니다. 다른 게임을 선택하세요."
+      else
+        while [[ $game2_complete -eq 0 ]]; do
+          display_board
+          echo -n "돌을 놓을 위치 (행 열): "
+          read row col
+          if [[ $row -ge 0 && $row -lt $board_size && $col -ge 0 && $col -lt $board_size ]]; then
+            place_stone $row $col
+          else
+            echo "잘못된 입력입니다. 0부터 7 사이의 숫자를 입력하세요."
+          fi
+        done
+      fi
+      ;;
+    *)
+      echo "잘못된 선택입니다. 다시 시도하세요."
+      ;;
+  esac
+
+done
