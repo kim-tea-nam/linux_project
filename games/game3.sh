@@ -158,12 +158,14 @@ game_loop() {
     if [ "$guessed_word" == "$word" ]; then
       display_hangman
       echo "축하합니다! 정답은 '$word'였습니다."
+    exit 0
     fi
   done
 
   if [ "$incorrect_guesses" -eq "$max_incorrect" ]; then
     display_hangman
     echo "게임 오버! 정답은 '$word'였습니다."
+  exit 1
   fi
 }
 
