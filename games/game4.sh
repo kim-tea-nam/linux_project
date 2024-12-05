@@ -303,16 +303,14 @@ play_turn() {
         if [ $? -eq 0 ]; then
            case $move in
               "a")  # 왼쪽 이동
-                  player_position=$((player_position - 1))
                   if [ $player_position -lt -1 ]; then
-                      player_position=-1
+                      player_position=$((player_position - 1))
                   fi
                   draw_player
                   ;;
               "d")  # 오른쪽 이동
-                  player_position=$((player_position + 1))
                   if [ $player_position -gt 1 ]; then
-                      player_position=1
+                      player_position=$((player_position + 1))
                   fi
                   draw_player
                   ;;
@@ -326,6 +324,20 @@ play_turn() {
                       draw_game
                   fi
                   ;;
+                "p")  # 미리보기 아이템 사용
+                    if [ $has_preview_item -gt 0 ]; then
+                        echo "미리보기 아이템을 사용합니다!"
+                        echo "다음 알 정보:"
+                        echo "공격력: $next_al_attack | 종류: $next_al_type"
+                        has_preview_item=$((has_preview_item - 1))
+                        sleep 2
+                        draw_game
+                    else
+                        echo "미리보기 아이템이 없습니다!"
+                        sleep 1
+                        draw_game
+                    fi
+                    ;;
                "q")  # 게임 종료
                     echo "게임을 종료합니다."
                     return
