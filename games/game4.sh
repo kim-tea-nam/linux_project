@@ -1,178 +1,374 @@
 #!/bin/bash
 
 player_attack=5
-lives=1
-player_name=""
-player_position=0   # 0: 중앙, -1: 왼쪽, 1: 오른쪽
-turns=1  # 게임 턴 수
+player_position=0         # -1: 왼쪽, 0: 중앙, 1: 오른쪽
+current_al_position=0     # 현재 알 위치
+next_al_position=1        # 다음 알 위치
+turns=1
+has_preview_item=0        # 미리보기 아이템
+current_al_attack=0         # 공격력, 타입 설정
+next_al_attack=0
+current_al_type=""
+next_al_type=""
+time_limit=15             # 제한시간 설정
+time_left=$time_limit
 
-# 초기 설정
-clear
-echo "게임을 시작하려면 이름을 입력해주세요: "
-read player_name
-
-# 게임 시작 화면 출력
-clear
-echo "==============================="
-echo "     게임 시작 - $player_name     "
-echo "==============================="
-echo "1. 게임 시작"
-echo "2. 게임 방법"
-echo "==============================="
-echo "선택해주세요: "
-read choice
-
-if [ "$choice" -eq 1 ]; then
-    # 게임 시작
+# 게임 시작
+start_game() {
     clear
-    echo "게임 시작! 잠시 후 알이 나타납니다..."
-    sleep 2
-elif [ "$choice" -eq 2 ]; then
-    echo "게임 방법:"
-    echo "1. 왼쪽(a) 또는 오른쪽(d)으로 말(▲)을 움직입니다."
-    echo "2. 게임을 시작하면 랜덤 숫자가 써있는 알이 등장합니다."
-    echo "3. 알을 선택(s)하면 알이 깨집니다. 알을 깨면 그 수가 +일지, -일지 알게 됩니다."
-    echo "4. 깬 알에 따라서 플레이어의 공격력이 변화합니다."
-    echo "5. 공격력이 증가할수록 선택 시간이 점점 줄어들어 난이도가 올라갑니다. "
-    echo "6. 공격력이 25,000 이상이 되면 방에서 탈출할 수 있습니다."
-    echo "7. 반대로 공격력이 0보다 낮아지면 목숨을 1개 잃습니다."
-    echo "게임을 시작하려면 엔터를 누르세요."
-    read
-fi
 
-# 초기 플레이어 화면 출력
-clear
-while true; do
-    clear
-    echo "================================"
-    echo "플레이어: $player_name  |  공격력: $player_attack  |  목숨: $lives"
-    echo "================================"
-    if [ $player_position -eq 0 ]; then
-        echo "          ▲"
-    elif [ $player_position -eq -1 ]; then
-        echo "     ▲"
+    # 게임 시작 화면 출력
+    while true; do
+        clear
+        echo "==============================="
+        echo "1. 게임 시작"
+        echo "2. 게임 방법"
+        echo "==============================="
+        echo "선택해주세요: "
+        read choice
+
+        case $choice in
+            1)
+                # 게임 시작
+                clear
+                echo "게임 시작! 잠시 후 알이 나타납니다..."
+                sleep 2
+                break
+                ;;
+            2)
+                echo "게임 방법:"
+                echo "1. 왼쪽(a) 또는 오른쪽(d)으로 말(▲)을 움직입니다."
+                echo "2. 게임을 시작하면 랜덤 숫자가 써있는 알이 등장합니다."
+                echo "3. 알을 선택(s)하면 알이 깨집니다. 알을 깨면 그 수가 +일지, -일지 알게 됩니다."
+                echo "4. 알 안에는 어떤 것이 있을지 깨기 전까지는 알 수 없습니다. 깬 알에 따라서 플레이어의 공격력이 변화합니다."
+                echo "5. 미리보기 아이템(♣) : 'p' 키를 누르면 공격력 200을 소모하는 대신, 다음 알의 숫자를 미리 확인할 수 있습니다."
+                echo "6. 공격력이 증가할수록 선택 시간이 점점 줄어들어 난이도가 올라갑니다."
+                echo "7. 당신의 공격력이 25,000 이상이 되면 방에서 탈출할 수 있습니다."
+                echo "8. 반대로 당신보다 센 적을 마주쳐 공격력이 0보다 낮아지면 목숨을 1개 잃습니다."
+                echo "게임을 시작하려면 엔터를 누르세요."
+                read
+                ;;
+            *)
+                echo "잘못된 입력입니다. 다시 선택해주세요."
+                ;;
+        esac
+    done
+}
+
+# 말 이동
+draw_player() {
+    if [ $player_position -eq -1 ]; then
+        echo "   ▲                      "
+    elif [ $player_position -eq 0 ]; then
+        echo "           ▲              "
     elif [ $player_position -eq 1 ]; then
-        echo "          ▲"
+        echo "                     ▲    "
     fi
-    echo "          $player_name"
-    echo "==============================="
-    
-    # 알 등장
-    sleep 2
-    echo "알이 등장했습니다!"
-    sleep 1
-    
-    # 턴 수에 따른 알 공격력 설정
-    if [ $turns -le 3 ]; then
-        al_attack=$((RANDOM % 6))  # 0~5
-    elif [ $turns -le 6 ]; then
-        al_attack=$((RANDOM % 15 + 6))  # 6~20
-    elif [ $turns -le 10 ]; then
-        al_attack=$((RANDOM % 30 + 21))  # 21~50
-    elif [ $turns -le 13 ]; then
-        al_attack=$((RANDOM % 30 + 51))  # 51~80
-    elif [ $turns -le 18 ]; then
-        al_attack=$((RANDOM % 20 + 81))  # 81~100
+}
+
+draw_game() {
+    clear
+    echo "===================================="
+    echo "플레이어 공격력: $player_attack  |  아이템 여부: $has_preview_item"
+    echo "조작키: 왼쪽(a), 오른쪽(d), 알 깨기(s), 아이템 사용(p), 게임 종료(q)"
+    echo "===================================="
+
+    if [ $turns -eq 1 ]; then
+        echo "당신은 빛이 있는 곳으로 걸어갑니다..."
+        sleep 2
+        echo "수상한 알이 등장했습니다!"
+        sleep 1
+    fi
+
+    # 다음 알 출력
+    if [ $next_al_position -eq -1 ]; then
+        echo "  ____             "
+        echo "/     \\            "
+        echo "|   ?   |          "
+        echo "\\__/            "
+    elif [ $next_al_position -eq 0 ]; then
+        echo "          ___     "
+        echo "        /    \\    "
+        echo "        |   ?   |  "
+        echo "       \\___/    "
     else
-        al_attack=$((RANDOM % 1000 + player_attack - 30))  # ~1000, 30 오차
+        echo "                      ___"
+        echo "                    /   \\"
+        echo "                   |   ?   |    "
+        echo "                   \\___/"
     fi
-    
-    # 알의 종류 결정
-    rand=$((RANDOM % 100))
-    if [ $rand -lt 45 ]; then
-        echo "알 안에서 적이 나타났습니다! 공격력을 잃습니다."
-        sign="-"
-        player_attack=$((player_attack - al_attack))
-    elif [ $rand -lt 80 ]; then
-        echo "알 안에 무기가 있습니다! 공격력이 증가합니다."
-        sign="+"
-        player_attack=$((player_attack + al_attack))
+
+    # 현재 알 출력
+    if [ $current_al_position -eq -1 ]; then
+        echo "                    _____ "
+        echo "                  /       \\"
+        echo "                /          \\"
+        echo "                |    $current_al_attack     |"
+        echo "                \\        /"
+        echo "                 \\_____/ "
+    elif [ $current_al_position -eq 0 ]; then
+        echo "          _____    "
+        echo "        /       \\   "
+        echo "      /           \\  "
+        echo "      |    $current_al_attack     | "
+        echo "       \\        /  "
+        echo "        \\_____/   "
     else
-        echo "알 안에 선물이 있습니다! 공격력이 1.5배로 증가합니다."
-        sign="*"
-        player_attack=$((player_attack * 3 / 2))
+        echo "                   _____ "
+        echo "                 /       \\"
+        echo "               /          \\"
+        echo "               |    $current_al_attack     |"
+        echo "               \\        /"
+        echo "                \\_____/ "
     fi
-    
+    draw_player
 
-    al_shape=$((RANDOM % 2))  # 0 또는 1로 랜덤 선택
-    
-    if [ $al_shape -eq 0 ]; then
-        # 첫 번째 모양 (큰 알)
-        echo "   _____   "
-        echo "  /     \\  "
-        echo " /       \\ "
-        echo "|  $sign$al_attack  |"
-        echo " \\       / "
-        echo "  \\_____/  "
-    else
-        # 두 번째 모양 (작은 알)
-        echo "  ___  "
-        echo " /   \\ "
-        echo "| $sign$al_attack |"
-        echo " \\___/ "
-    fi
-    
-    # 플레이어 공격력
-    echo "현재 공격력: $player_attack"
-    sleep 3
-
-    # 선택 제한시간 시작
-    limit_time=10
-    if [ $player_attack -ge 2500 ]; then
-        limit_time=7
-    fi
-    if [ $player_attack -ge 4500 ]; then
-        limit_time=5
-    fi
-    if [ $player_attack -ge 5500 ]; then
-        limit_time=3
-    fi
-
-    echo "선택 시간: $limit_time 초"
-
-    # a, d, s 입력 받기
-    read -t $limit_time -n 1 move
-    if [[ $move == "a" ]]; then
-        player_position=-1
-        echo "왼쪽으로 이동합니다!"
-    elif [[ $move == "d" ]]; then
-        player_position=1
-        echo "오른쪽으로 이동합니다!"
-    elif [[ $move == "s" ]]; then
-        echo "알을 깨기로 선택했습니다!"
-
-        # + 또는 -를 랜덤으로 결정 (확률 65%: +, 35%: -)
-        rand2=$((RANDOM % 100))
-        if [ $rand2 -lt 65 ]; then
-            echo "알을 깨니 +${al_attack}이 나왔습니다!"
-            echo "     /<         >\\"
-            echo "    | < +$sign$al_attack >|"
-            echo "     |<   >|"
-            echo "      \\<___>/"
-            player_attack=$((player_attack + al_attack))
+    # 미리보기 알 출력 (미리보기 아이템이 있을 때만)
+    if [ $has_preview_item -eq 1 ]; then
+        if [ $next_al_position -eq -1 ]; then
+            echo "    ___             "
+            echo "  /    \\            "
+            echo " |   ?    | "
+            echo " \\___/            "
+        elif [ $next_al_position -eq 0 ]; then
+            echo "           ___     "
+            echo "         /   \\    "
+            echo "        |   ?   |"
+            echo "        \\___/    "
         else
-            echo "알을 깨니 -${al_attack}이 나왔습니다!"
-            echo "     /<         >\\"
-            echo "    | < -$sign$al_attack >|"
-            echo "     |<   >|"
-            echo "      \\<___>/"
-            player_attack=$((player_attack - al_attack))
+            echo "                       ___"
+            echo "                     /   \\"
+            echo "                    |   ?   |"
+            echo "                    \\___/"
         fi
     fi
 
-    # 게임 종료
+    echo "==============================="
+
+    # 남은 시간 표시
+    echo "선택 제한 시간: $time_left 초 남음"
+}
+
+# 알 공격력 설정
+set_current_al_attack() {
+    # min_attack=$((player_attack - 5))
+    # max_attack=$((player_attack + 9))
+    # current_al_attack=$((RANDOM % (max_attack - min_attack + 1) + min_attack))
+    # if [ $current_al_attack -lt 1 ]; then
+    #    current_al_attack=1
+    # fi
+    
+    if [ $turns -le 3 ]; then
+        current_al_attack=$((RANDOM % 5 + 1))  # 1~5
+    elif [ $turns -le 6 ]; then
+        current_al_attack=$((RANDOM % 15 + 6))  # 6~20
+    elif [ $turns -le 11 ]; then
+        current_al_attack=$((RANDOM % 30 + 21))  # 21~50
+    elif [ $turns -le 15 ]; then
+        current_al_attack=$((RANDOM % 30 + 51))  # 51~80
+    elif [ $turns -le 18 ]; then
+        current_al_attack=$((RANDOM % 20 + 81))  # 81~100
+    else
+        current_al_attack=$((RANDOM % 1000 + player_attack - 30))  # ~1000, 30 오차
+    fi
+}
+
+set_next_al_attack() {
+    if [ $turns -le 3 ]; then
+        next_al_attack=$((RANDOM % 5 + 1))  # 1~5
+    elif [ $turns -le 6 ]; then
+        next_al_attack=$((RANDOM % 15 + 6))  # 6~20
+    elif [ $turns -le 11 ]; then
+        next_al_attack=$((RANDOM % 30 + 21))  # 21~50
+    elif [ $turns -le 15 ]; then
+        next_al_attack=$((RANDOM % 30 + 51))  # 51~80
+    elif [ $turns -le 18 ]; then
+        next_al_attack=$((RANDOM % 20 + 81))  # 81~100
+    else
+        next_al_attack=$((RANDOM % 1000 + player_attack - 30))  # ~1000, 30 오차
+    fi
+}
+
+# 알 종류 결정
+set_current_al_type() {
+    rand=$((RANDOM % 100))
+    if [ $rand -lt 5 ]; then  # 0% ~ 5%: 미리보기 아이템 (5%)
+        current_al_type="미리보기 아이템"
+        has_preview_item=$((has_preview_item + 1))
+    elif [ $rand -lt 50 ]; then  # 5% ~ 50%: 적 등장 (45%)
+        current_al_type="적"
+    elif [ $rand -lt 95 ]; then  # 50% ~ 95%: 무기 등장 (45%)
+        current_al_type="무기"
+    else  # 95% ~ 100%: 선물 등장 (5%)
+        current_al_type="선물"
+    fi
+}
+
+# 깨졌을 때
+break_al() {
+    clear
+    echo "===================================="
+    echo "알이 깨졌습니다!"
+    case $current_al_type in
+        "적")
+            echo ""
+            echo "  - $current_al_attack"
+            echo "/\ /\ /\ /\"
+            echo " \\   ※     /"
+            echo "  \\_____/ "
+            echo ""
+            echo "알 안에서 $current_al_type 이 나타났습니다! $current_al_attack 만큼 공격력을 잃습니다."
+            player_attack=$((player_attack - current_al_attack))
+            sleep 2
+            ;;
+
+        "무기")
+            echo ""
+            echo "  + $current_al_attack"
+            echo "/\ /\ /\ /\"
+            echo " \\   †      /"
+            echo "  \\_____/ "
+            echo ""
+            echo "알 안에서 $current_al_type 이 나타났습니다! $current_al_attack 만큼 공격력을 증가합니다."
+            player_attack=$((player_attack + current_al_attack))
+            sleep 2
+            ;;
+
+        "선물")
+            echo ""
+            echo "  ☆ *1.5 ☆"
+            echo "/\ /\ /\ /\"
+            echo " \\   ☆    /"
+            echo "  \\_____/ "
+            echo ""
+            echo "알 안에 $current_al_type 이 있습니다! 공격력이 1.5배로 증가합니다."
+            player_attack=$((player_attack * 3 / 2))
+            sleep 2
+            ;;
+
+        "미리보기 아이템")
+            echo ""
+            echo "   ♣ ♣ ♣"
+            echo "/\ /\ /\ /\"
+            echo " \\   ♣    /"
+            echo "  \\_____/ "
+            echo ""
+            echo "알 안에 $current_al_type 이 있습니다! 'p'를 눌러 사용할 수 있습니다."
+            has_preview_item=$((has_preview_item + 1))
+            sleep 2
+            ;;
+    esac
+
+    check_game_status
+}
+
+# 게임 턴 처리
+play_turn() {
+    set_current_al_attack
+    set_current_al_type
+    set_next_al_attack
+
+    # 다음 알 설정
+    if [ $rand -lt 5 ]; then
+        next_al_type="미리보기 아이템"
+    elif [ $rand -lt 50 ]; then
+        next_al_type="적"
+    elif [ $rand -lt 95 ]; then
+        next_al_type="무기"
+    else
+        next_al_type="선물"
+    fi
+
+    # 게임 화면 출력
+    draw_game
+
+    echo "선택 시간: $time_limit 초"
+    echo "(a: 왼쪽 이동, d: 오른쪽 이동, s: 알 깨기, q: 종료)"
+
+    # 제한 시간 안에 입력 처리
+    local start_time=$(date +%s)
+    while true; do
+        # 남은 시간 계산
+        local current_time=$(date +%s)
+        local elapsed_time=$((current_time - start_time))
+        time_left=$((time_limit - elapsed_time))
+
+        if [ $time_left -le 0 ]; then
+            echo "시간 초과! 다음 턴으로 넘어갑니다."
+            break
+        fi
+
+        # 입력 처리
+        read -t $time_limit -n 1 move
+        if [ $? -eq 0 ]; then
+           case $move in
+              "a")  # 왼쪽 이동
+                  player_position=$((player_position - 1))
+                  if [ $player_position -lt -1 ]; then
+                      player_position=-1
+                  fi
+                  draw_player
+                  ;;
+              "d")  # 오른쪽 이동
+                  player_position=$((player_position + 1))
+                  if [ $player_position -gt 1 ]; then
+                      player_position=1
+                  fi
+                  draw_player
+                  ;;
+              "s")  # 알 깨기
+                  if [ $player_position -eq $current_al_position ]; then
+                      break_al
+                      return
+                  else
+                      echo "플레이어 위치와 알이 맞지 않습니다!"
+                      sleep 1
+                      draw_game
+                  fi
+                  ;;
+               "q")  # 게임 종료
+                    echo "게임을 종료합니다."
+                    return
+                    ;;
+              *)  # 잘못된 입력
+                  echo "잘못된 입력입니다!"
+                  ;;
+            esac
+          fi
+          time_left=$((time_left - 1))
+          turns=$((turns + 1))
+      done
+
+    # 다음 턴 준비
+    current_al_position=$next_al_position
+    next_al_position=$((RANDOM % 3 - 1))  # -1, 0, 1 위치 중 랜덤
+    time_left=$time_limit  # 제한 시간 리셋
+
+    # 난이도 조정
+    if [ $player_attack -ge 2500 ]; then
+        time_limit=11
+    fi
+    if [ $player_attack -ge 4500 ]; then
+        time_limit=7
+    fi
+    if [ $player_attack -ge 5500 ]; then
+        time_limit=5
+    fi
+}
+
+# 게임 종료 조건 확인
+check_game_status() {
     if [ $player_attack -ge 25000 ]; then
-        echo "축하합니다! 모든 적을 물리쳤습니다. 당신은 방에서 탈출할 수 있습니다!"
-	exit 0
-        break
+        echo "축하합니다. 모든 적을 물리쳤습니다! 다음 방으로 가는 문이 열렸습니다."
+        exit 0
+    elif [ $player_attack -le 0 ]; then
+        echo "게임 종료! 당신의 공격력이 0으로 떨어졌습니다."
+        exit 1
     fi
+}
 
-    if [ $player_attack -le 0 ]; then
-        echo "게임 종료! 공격력이 0이 되었습니다."
-	exit 1
-        break
-    fi
-
-    # 턴 수 증가
-    turns=$((turns + 1))
+# 게임 시작 루프
+start_game
+while true; do
+    play_turn
 done
