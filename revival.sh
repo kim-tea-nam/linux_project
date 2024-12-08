@@ -1,16 +1,11 @@
-#!/bin/bash
-
-# 전역 변수 초기화
 LIVES=3
 
-# 생명 UI 업데이트 함수
 update_lives_ui() {
     echo "-----------------------"
     echo "생명: $LIVES"
     echo "-----------------------"
 }
 
-# 게임 실행 함수
 run_game() {
     local game_script=$1
     echo "$(basename $game_script) 실행"
@@ -40,11 +35,9 @@ run_game() {
     fi
 }
 
-# 초기 UI
 update_lives_ui
 
-# 게임 리스트 순서대로 실행
-games=("game1.sh" "game2.sh" "game3.sh")
+games=("game1.sh" "game2-1.sh" "game2-2.sh" "game2-3.sh" "game3.sh" "game4.sh" "game5.sh")
 for game in "${games[@]}"; do
     run_game $game
     echo "엔터를 입력해주세요."
