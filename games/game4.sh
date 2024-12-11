@@ -20,6 +20,16 @@ start_game() {
     # 게임 시작 화면 출력
     while true; do
         clear
+        echo -e "                                             ##     # "
+        echo -e " #####                  ####                  #     # "
+        echo -e "  #  #   ####   ####     #  # ### ##   ###   # #   #  "
+        echo -e "  ##    #  #   #  #      #  #  #  #   #      #  #  #  "
+        echo -e " #     #   #  #   #     # ##   #  #    ##   #   #  #  "
+        echo -e " #  #  #  #   #  #      #  #  #  #   #  #   #  #      "
+        echo -e "#####   ###    ###     ### ##  ## #  ###   ### ## #   "
+        echo -e "          #      #                                     "
+        echo -e "       ###    ###                                      "
+        echo ""
         echo "===================================="
         echo "1. 게임 시작"
         echo "2. 게임 방법"
@@ -32,7 +42,7 @@ start_game() {
                 # 게임 시작
                 clear
                 echo "잠시후 게임이 시작됩니다..."
-                sleep 3
+                sleep 2
                 break
                 ;;
             2)
@@ -369,10 +379,10 @@ play_turn() {
 # 게임 종료 조건
 check_game_status() {
     if [ $player_attack -ge 8000 ]; then
-        echo "축하합니다. 모든 적을 물리쳤습니다! 다음 방으로 가는 문이 열렸습니다."
+        echo "\033[1;33m축하합니다. 모든 적을 물리쳤습니다! 다음 방으로 가는 문이 열렸습니다.\033[0m"
         exit 0
     elif [ $player_attack -le 0 ]; then
-        echo "게임 종료! 당신의 공격력이 0으로 떨어졌습니다."
+        echo "\033[1;33m게임 종료! 당신의 공격력이 0으로 떨어졌습니다.\033[0m"
         exit 1
     fi
 }
