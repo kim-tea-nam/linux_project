@@ -51,9 +51,9 @@ start_game() {
                 echo "2. 게임을 시작하면 랜덤 숫자가 써있는 알이 등장합니다."
                 echo "3. 알을 선택(s)하면 알이 깨집니다. 알을 깨면 그 수가 +일지, -일지 알게 됩니다."
                 echo "4. 알 안에는 어떤 것이 있을지 깨기 전까지는 알 수 없습니다. 깬 알에 따라서 플레이어의 공격력이 변화합니다."
-                echo "5. 미리보기 아이템(♣) : 'p' 키를 누르면 공격력 200을 소모하는 대신, 다음 알의 숫자를 미리 확인할 수 있습니다."
+                echo "5. 미리보기 아이템(♣) : 'p' 키를 누르면 공격력 50을 소모하는 대신, 다음 알의 숫자를 미리 확인할 수 있습니다."
                 echo "6. 공격력이 증가할수록 선택 시간이 점점 줄어들어 난이도가 올라갑니다."
-                echo "7. 당신의 공격력이 8,000 이상이 되면 방에서 탈출할 수 있습니다."
+                echo "7. 당신의 공격력이 1,000 이상이 되면 방에서 탈출할 수 있습니다."
                 echo "8. 반대로 당신보다 센 적을 마주쳐 공격력이 0보다 낮아지면 목숨을 1개 잃습니다."
                 echo "게임 방법을 끄려면 엔터를 누르세요."
                 read
@@ -69,7 +69,7 @@ start_game() {
 draw_player() {
     tput cup 10 0
     if [ $player_position -eq -1 ]; then
-        echo "  ▲                      "
+        echo "    ▲                      "
     elif [ $player_position -eq 0 ]; then
         echo "           ▲              "
     elif [ $player_position -eq 1 ]; then
@@ -90,7 +90,7 @@ draw_game() {
    fi
 
    if [ $next_al_position -eq -1 ]; then
-        echo "  ___             "
+        echo " ___             "
         echo "/  \\            "
         echo "| ? |          "
         echo "\\___/            "
@@ -100,7 +100,7 @@ draw_game() {
         echo "           | ? |  "
         echo "           \\___/    "
     elif [ $next_al_position -eq 1 ]; then
-        echo "                      ___"
+        echo "                       ___"
         echo "                      /   \\"
         echo "                      | ? |    "
         echo "                      \\___/"
@@ -108,12 +108,12 @@ draw_game() {
 
     # 현재 알 출력
     if [ $current_al_position -eq -1 ]; then
-        echo -e "\033[1m     _____       \033[0m"
-        echo -e "\033[1m   /      \\      \033[0m"
-        echo -e "\033[1m  /        \\     \033[0m"
-        echo -e "\033[1m |    $current_al_attack     |    \033[0m"
-        echo -e "\033[1m  \\        /  \033[0m"
-        echo -e "\033[1m   \\______/      \033[0m"    
+        echo -e "\033[1m    _____       \033[0m"
+        echo -e "\033[1m  /      \\      \033[0m"
+        echo -e "\033[1m /        \\     \033[0m"
+        echo -e "\033[1m|    $current_al_attack     |    \033[0m"
+        echo -e "\033[1m \\        /  \033[0m"
+        echo -e "\033[1m  \\______/      \033[0m"    
     elif [ $current_al_position -eq 0 ]; then
         echo -e "\033[1m           _____  \033[0m"
         echo -e "\033[1m         /      \\  \033[0m"
@@ -220,7 +220,7 @@ break_al() {
             echo -e "\033[1m \\    †    /   \033[0m"
             echo -e "\033[1m  \\______/    \033[0m"
             echo ""
-            echo "알 안에서 $current_al_type 이 나타났습니다! $current_al_attack 만큼 공격력을 증가합니다."
+            echo "알 안에서 $current_al_type 가 들어있습니다! $current_al_attack 만큼 공격력이 증가합니다."
             player_attack=$((player_attack + current_al_attack))
             sleep 3
             ;;
@@ -328,9 +328,9 @@ play_turn() {
                         has_preview_item=$((has_preview_item - 1))
                         sleep 2
                         draw_game
-                   elif [ $player_attack -ge 200 ]; then
-                        echo "공격력 200을 소모하여, 미리보기 기능을 사용합니다!"
-                        player_attack=$((player_attack - 200))
+                   elif [ $player_attack -ge 50 ]; then
+                        echo "공격력 50을 소모하여, 미리보기 기능을 사용합니다!"
+                        player_attack=$((player_attack - 50))
                         sleep 2
                         echo "다음 알의 정보:"
                         echo -e "\033[31m공격력: $next_al_attack | 종류: $next_al_type\033[0m"
@@ -338,7 +338,7 @@ play_turn() {
                         draw_game
                     else
                         echo "미리보기 아이템이 없습니다! 알에서 발견한 후에 사용하세요."
-                        echo "공격력이 부족합니다! 아이템을 사용하기 위해 필요한 공격력: 200"
+                        echo "공격력이 부족합니다! 아이템을 사용하기 위해 필요한 공격력: 50"
                         sleep 2
                         draw_game
                     fi
@@ -350,7 +350,6 @@ play_turn() {
           fi
           time_left=$((time_left - 1))
           turns=$((turns + 1))
-
           sleep 1
       done
 
@@ -360,17 +359,17 @@ play_turn() {
     time_left=$time_limit  # 제한 시간 리셋
 
     # 난이도 조정
-    if [ $player_attack -ge 2500 ]; then
+    if [ $player_attack -ge 200 ]; then
         time_limit=10
-        echo "현재 공격력이 2500을 넘어 선택 제한시간이 10초로 줄었습니다!"
+        echo "현재 공격력이 200을 넘어 선택 제한시간이 10초로 줄었습니다!"
     fi
-    if [ $player_attack -ge 5000 ]; then
+    if [ $player_attack -ge 500 ]; then
         time_limit=7
-        echo "현재 공격력이 5000을 넘어 선택 제한시간이 7초로 줄었습니다!"
+        echo "현재 공격력이 500을 넘어 선택 제한시간이 7초로 줄었습니다!"
     fi
-    if [ $player_attack -ge 7000 ]; then
+    if [ $player_attack -ge 700 ]; then
         time_limit=5
-        echo "현재 공격력이 7000을 넘어 선택 제한시간이 5초로 줄었습니다!"
+        echo "현재 공격력이 700을 넘어 선택 제한시간이 5초로 줄었습니다!"
     fi
 
     check_game_status    
@@ -378,7 +377,7 @@ play_turn() {
 
 # 게임 종료 조건
 check_game_status() {
-    if [ $player_attack -ge 8000 ]; then
+    if [ $player_attack -ge 1000 ]; then
         echo "\033[1;33m축하합니다. 모든 적을 물리쳤습니다! 다음 방으로 가는 문이 열렸습니다.\033[0m"
         exit 0
     elif [ $player_attack -le 0 ]; then
