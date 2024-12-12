@@ -67,7 +67,7 @@ echo "======================="
 
 update_lives_ui
 
-games=("game1.sh" "game2-1.sh" "game2-2.sh" "game2-3.sh" "game3.sh" "game4.sh" "game5.sh")
+games=("game1.sh" "game2-1.sh" "game2-2.sh" "game2-3.sh" "game3.sh" "game4.sh")
 
 while true; do
     for game in "${games[@]}"; do
